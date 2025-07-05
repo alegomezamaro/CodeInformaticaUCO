@@ -31,11 +31,6 @@ while [ ${#lista[@]} -gt 0 ]; do #Mientras haya elementos en lista
 
         nombre=$(basename "$elemento") #Obtenemos el nombre del elemento
 
-        if [ "$nombre" = "index.html" ]; then #Si el nombre es index.html, se salta
-
-            continue
-        fi
-
         if [ -d "$elemento" ]; then #Si es un directorio
 
             echo "<li><a href=\"$nombre/index.html\">$nombre</a></li>" >> "$index" #Añadir el enlace a index.html
