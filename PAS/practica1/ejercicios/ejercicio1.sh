@@ -6,7 +6,7 @@ if [ $# -ne 1 ]; then #Comprueba si el número de argumentos es 1
     exit 1
 fi
 
-directorio=$1 #Argumento 1
+directorio=$1
 
 if [ ! -d "$directorio" ]; then #Comprueba si el directorio existe
 
@@ -37,4 +37,7 @@ done
 
 media=(($total/$lineas)) #Calculamos la media de asistencia  
 echo "La media de asistencia es: $media"
+
+echo
+echo "Ejercicio finalizado correctamente"
 exit 0 #Salir

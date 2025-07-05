@@ -6,11 +6,11 @@ if [ $# -lt 1 ] || [ $# -gt 2 ]; then #Comprueba si el número de argumentos es 
     exit 1
 fi
 
-longitud=$1 #Argumento 1
-tipo=$2 #Argumento 2
+longitud=$1
+tipo=$2
 
 while [[ -z "$tipo" || ( "$tipo" != "alfa" && "$tipo" != "num" && "$tipo" != "alfanum" ) ]]; do
-#Mientras tipo este vacio o no se introduzca una cadena válida
+#Mientras tipo este vacio o no tenga un valor válido
 
     read -p "Introduce el tipo de cadena (alfanum, alfa o num): " tipo #Almacena la respuesta en $tipo
 done
@@ -27,10 +27,10 @@ case "$tipo" in #Según el tipo de cadena
         tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c "$longitud";;
 
 esac
-    #tr -dc 'a-zA-Z0-9'     Elimina todos los caracteres de que esten en el dominio dado
+    #tr -dc 'a-zA-Z0-9'     Elimina todos los caracteres que no esten en el dominio dado
     #< /dev/urandom         Secuencia aleatoria de bytes
     #head -c "$longitud"    Coge los $longitud primeros bytes
 
-echo #Salto de línea
-
+echo
+echo "Ejercicio finalizado correctamente"
 exit 0

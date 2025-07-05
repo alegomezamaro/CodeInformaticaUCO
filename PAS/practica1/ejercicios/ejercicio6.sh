@@ -1,32 +1,31 @@
 #!/bin/bash
 
-if [ $# -ne 1 ]; then
+if [ $# -ne 1 ]; then #Comprueba si el número de argumentos es 1
 
     echo "Uso: $0 <directorio>"
     exit 1
 fi
 
-directorio=$1 #Argumento 1
+directorio="${1%/}" #Eliminamos / si tiene
 
-if [ ! -d "$directorio" ]; then
+if [ ! -d "$directorio" ]; then #Comprueba si el directorio origen existe
 
     echo "Error: El directorio no existe"
     exit 1
 fi
 
-lista=("$directorio:$directorio") #Guardamos dos directorios (directorio:ruta_relativa)
+lista=("$directorio") #Guardamos directorio
 
 while [ ${#lista[@]} -gt 0 ]; do #Mientras haya elementos en lista 
 
-    entrada="${lista[0]}" #Obtenemos el primer elemento del array
+    dir="${lista[0]}" #Obtenemos el primer elemento del array
     lista=("${lista[@]:1}") #Eliminamos el primer elemento del array
-    dir="${entrada%%:*}" #Elimina de : en adelante ("$directorio:$ruta_relativa" -> "$directorio")
-    ruta_relativa="${entrada#*:}" #Elimina del inicio a : ("$directorio:$ruta_relativa" -> "$ruta_relativa")
+    index="${dir%/}/index.html" #Creamos una ruta/index.html
     
-    echo "<!DOCTYPE html>" > "$dir/index.html" #Creamos el fichero index.html
-    echo "<html><body>" >> "$dir/index.html" #Añadir el cuerpo del fichero
-    echo "<h1>Contenido de $ruta_relativa</h1>" >> "$dir/index.html" #Añadimos el título
-    echo "<ul>" >> "$dir/index.html" #Añadimos la lista
+    echo "<!DOCTYPE html>" > "$index" #Creamos el fichero index.html
+    echo "<html><body>" >> "$index" #Añadir el cuerpo del fichero
+    echo "<h1>Contenido de $(basename "$dir")</h1>" >> "$index" #Añadimos el título
+    echo "<ul>" >> "$index" #Añadimos la lista
 
     for elemento in "$dir"/*; do #Recorremos los elementos del directorio
 
@@ -39,18 +38,20 @@ while [ ${#lista[@]} -gt 0 ]; do #Mientras haya elementos en lista
 
         if [ -d "$elemento" ]; then #Si es un directorio
 
-            echo "<li><a href=\"$nombre/index.html\">$nombre</a></li>" >> "$dir/index.html" #Añadir el enlace a index.html
-            lista+=("$elemento:$ruta_relativa/$nombre") #Añadir el directorio a la lista
+            echo "<li><a href=\"$nombre/index.html\">$nombre</a></li>" >> "$index" #Añadir el enlace a index.html
+            lista+=("$elemento") #Añadir el directorio a la lista
 
         else #Sino
 
-            echo "<li>$nombre</li>" >> "$dir/index.html" #Añadir el nombre del fichero al index.html
+            echo "<li>$nombre</li>" >> "$index" #Añadir el nombre del fichero al index.html
         fi
     done
 
-    echo "</ul>" >> "$dir/index.html" #Cerrar la lista
-    echo "</body></html>" >> "$dir/index.html" #Cerrar el fichero
-    echo "Se ha creado el fichero $dir/index.html con el contenido del directorio $ruta_relativa" # Muestra un mensaje indicando que se ha creado el archivo index.html con el contenido del directorio correspondiente
+    echo "</ul>" >> "$index" #Cerrar la lista
+    echo "</body></html>" >> "$index" #Cerrar el fichero
+    echo "Se ha creado el fichero $index con el contenido del directorio $dir" # Muestra un mensaje indicando que se ha creado el archivo index.html con el contenido del directorio correspondiente
 done
 
+echo
+echo "Ejercicio finalizado correctamente"
 exit 0
