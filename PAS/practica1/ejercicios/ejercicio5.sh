@@ -19,7 +19,7 @@ ficheros=$(find $directorio -type f) #Almacena todos los archivos dentro de $dir
 for fichero in $ficheros; do  #Para cada fichero
 
     nombre=$(basename $fichero) #Nombre del fichero
-    ruta=$fichero #Ruta del fichero
+    ruta=$(realpath $fichero) #Ruta del fichero
     tam=$(stat -c %s $fichero) #Tamaño del fichero
     #%s     Tamaño en bytes del fichero
 
