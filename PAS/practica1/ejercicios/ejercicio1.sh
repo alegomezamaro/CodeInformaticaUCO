@@ -27,15 +27,16 @@ for ((i=1; i<=$lineas; i=$i+1)); do #Recorremos todas las líneas
     for fichero in $ficheros; do #Recorremos todos los ficheros
 
         lineaFichero=$(cat $fichero | head -n $i | tail -n 1) #Head lee las "i" primeras lineas y tail coge la ultima de ellas
-        asistencia=(($asistencia+$lineaFichero)) #Sumamos el número de asistencias en dicha sesion
+        let asistencia=($asistencia+$lineaFichero) #Sumamos el número de asistencias en dicha sesion
     done
     
     echo "Asistieron $asistencia personas a la sesión $i"
-    total=(($total+$asistencia)) #Sumamos las asistencias totales
+    let total=($total+$asistencia) #Sumamos las asistencias totales
 
 done
 
-media=(($total/$lineas)) #Calculamos la media de asistencia  
+let media=($total/$lineas) #Calculamos la media de asistencia  
+echo
 echo "La media de asistencia es: $media"
 
 echo
