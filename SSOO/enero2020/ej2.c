@@ -9,110 +9,124 @@
 //  - El padre comprobará que la suma devuelta por los hilos sea igual a la suma 
 //    de las variables par e impar.
 
-#include <stdio.h>  //Funciones de entrada/salida, como printf o perror
-#include <stdlib.h> //exit, malloc o atoi
-#include <string.h> //strerror
-#include <errno.h> //Errores en la variable errno
-#include <unistd.h> //fork, getpid, getppid, sleep, execl, execv...
-#include <pthread.h> //Hilos y mutex
-#include <time.h> //srand
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <pthread.h>
+#include <time.h>
 
-//Mutex
+//Inicializamos las variables globales y los mutex que protegeran a los mismos
 int par = 0;
 int impar = 0;
-pthread_mutex_t mutex_par=PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_impar=PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mpar = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mimpar = PTHREAD_MUTEX_INITIALIZER;
 
-//Esctructura hilo
+//Creamos la estructura que llevaran los hilos (indice y suma)
 struct Hilo{
-    int id;
+
+    int indice;
     int suma;
 };
 
-//Generar hilos
-void* sumaHilos(void* arg) {
+//Funcion de los hilos
+void *func(void * arg){
 
-    //Reservar memoria
-    struct Hilo* hilo=(struct Hilo*)arg;
+    //Creamos la estructura del hilo e inicializamos la suma a 0
+    struct Hilo *hilo = (struct Hilo*) arg;
     hilo->suma = 0;
 
-    //Generar 100 números aleatorios entre 0 y 10
-    for(int i=0; i<100; i++){
-        int aux=(int)rand()%11;
-        hilo->suma+=aux;
+    //Generamos 100 numeros del 0 al 10
+    for(size_t i = 0; i < 100; i++){
+
+        int num = (int)rand() % 11;
+
+        //Si es par se suma a par
+        if((num % 2) == 0){
+
+            pthread_mutex_lock(&mpar);
+            par += num;
+            pthread_mutex_unlock(&mpar);
+        }
+
+        //Si es impar a impar
+        else{
+
+            pthread_mutex_lock(&mimpar);
+            impar += num;
+            pthread_mutex_unlock(&mimpar);
+        }
+
+        //SUmamos en suma todos los valores
+        hilo->suma += num;
     }
 
-    printf("\nHilo %d= %d", hilo->id, hilo->suma);
-
-    //Devolver el valor del hilo
-    pthread_exit((void*)hilo);
+    //Imprimimos el indice y la suma antes de terminar el hilo
+    printf("\nHilo %d= %d", hilo->indice, hilo->suma);
+    pthread_exit((void*) hilo);
 }
 
 int main(int argc, char *argv[]){
-    if (argc!=2) {
-        fprintf(stderr, "\nError al llamar a la función: ./ej2 <Numero de hilos>");
+
+    if(argc != 2){
+
+        fprintf(stderr, "\nNumero de argumentos incorrecto\n");
         exit(EXIT_FAILURE);
     }
-
-    int num=atoi(argv[1]);
-    pthread_t hebras[num];
-    struct Hilo* hilo[num];
+    
+    //Creamos un vector de estructuras y uno de hilos del tamañado pasado por argumentos
+    int tam = atoi(argv[1]);
     srand(time(NULL));
+    struct Hilo *estruc[tam];
+    pthread_t hilos[tam];
+    
+    //Para cada hilo
+    for(size_t i = 0; i < tam; i++){
 
-    //Crear hilos
-    for(int i=0; i<num; i++){
-        hilo[i] = malloc(sizeof(struct Hilo));
+        //Reservamos la memoria
+        estruc[i] = malloc(sizeof(struct Hilo));
 
-        //Error al reservar la memoria
-        if(hilo[i] == NULL){
-            fprintf(stderr, "\nError al reservar memoria para el hilo %d\n", i);
+        //Verificamos que este correctamente reservada
+        if(estruc[i] == NULL){
+
+            fprintf(stderr, "\nMemoria reservada incorrectamente\n");
             exit(EXIT_FAILURE);
         }
 
-        //Llamamos a la función despues de asignarle un id (indice)
-        hilo[i]->id = i+1;
-        if (pthread_create(&hebras[i], NULL, sumaHilos, hilo[i]) != 0) {
-            perror("\nError al crear el hilo\n");
+        //Añadimos el indice
+        estruc[i]->indice = (i+1);
+
+        //Creamos el hilo
+        if(pthread_create(&hilos[i], NULL, &func, estruc[i]) != 0){
+
+            fprintf(stderr, "\nHilo llamado incorrectamente\n");
             exit(EXIT_FAILURE);
         }
     }
 
-    //Recoger los hilos
-    for (int i=0; i<num; i++) {
-        struct Hilo* hilo;
+    //Definimos la suma total de los hilos
+    int total = 0;
 
-        //Se ha recogido correctamente?
-        if (pthread_join(hebras[i], (void**)&hilo)!=0) {
-            perror("\nError al esperar al hilo\n");
+    //Para cada hilo
+    for(size_t i = 0; i < tam; i++){
+
+        struct Hilo *ret;
+
+        //Recogemos los valores
+        if((pthread_join(hilos[i], (void**) &ret) != 0)){
+
+            fprintf(stderr, "\nHilo recogido incorrectamente\n");
             exit(EXIT_FAILURE);
         }
 
-        printf("\nPADRE -> Recogí el hilo %d con suma= %d", hilo->id, hilo->suma);
-
-        //Exclusion mutua de los mutex
-        //Par
-        if((hilo->suma%2)==0){
-            pthread_mutex_lock(&mutex_par);
-            par += hilo->suma;
-            pthread_mutex_unlock(&mutex_par);
-        }
-        //Impar
-        else{
-            pthread_mutex_lock(&mutex_impar);
-            impar += hilo->suma;
-            pthread_mutex_unlock(&mutex_impar);
-        }
-
-        //Liberar memoria del hilo
-        free(hilo);
+        //Se añade a total la suma de cada hilo
+        total += ret->suma;
+        printf("\nPADRE -> Recogí el hilo %d con suma= %d", ret->indice, ret->suma);
+        free(ret);
     }
 
-    //Comprobar las sumas totales
-    printf("\nResultados finales:");
-    printf("\nSuma global PAR= %d", par);
-    printf("\nSuma global IMPAR= %d\n", impar);
-
-    //Destruir mutex
-    pthread_mutex_destroy(&mutex_par);
-    pthread_mutex_destroy(&mutex_impar);
+    //Imprimimos valores
+    printf("\nLa suma de los hilos es %d\nLa suma de pares (%d) e impares (%d) es %d", total, par, impar, (par + impar));
+    pthread_mutex_destroy(&mpar);
+    pthread_mutex_destroy(&mimpar);
 }
