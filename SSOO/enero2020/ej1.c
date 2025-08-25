@@ -9,87 +9,75 @@
 //    "Padre PID, ha finalizado el hijo PID con el estado ESTADO" 
 //    por cada hijo. Mostrando las señales de ERRNO
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
 
 int main(int argc, char *argv[]){
-    
-    if(argc!=2){
-        fprintf(stderr, "\nNumero de argumentos incorrecto: ./ej1 <Numero a calcular el factorial>\n");
+
+    if(argc != 2){
+
+        printf("\nNumero de argumentos incorrecto\n");
         exit(EXIT_FAILURE);
     }
 
-    //Definimos variables
-    pid_t pidFact=fork();
+    pid_t wpid;
+    pid_t fact = fork();
     int status;
 
-    //Error al crear el proceso factorial
-    if(pidFact==-1){
-        fprintf(stderr, "\nError al crear el proceso factorial (fork)\n");
+    if(fact < 0){
+
+        printf("\nFactorial creado incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Proceso factorial creado correctamente
-    else if(pidFact==0){
+    else if(fact == 0){
+
+        printf("\nEntrando en factorial\n");
+        
         execl("./factorial", "./factorial", argv[1], NULL);
-        fprintf(stderr, "\nError al abrir el proceso factorial (execl)\n");
+
+        printf("\nFactorial abierto incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Recogemos factorial
-    while((pidFact=waitpid(-1, &status, WUNTRACED | WCONTINUED))>0){
-        if(pidFact>0){
-            if(WIFEXITED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WEXITSTATUS(status));
-            }
-            else if(WIFEXITED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WTERMSIG(status));
-            }
-            else if(WIFSTOPPED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WSTOPSIG(status));
-            }
-            else if(WIFCONTINUED(status)){
-                printf("\nPadre %d, el hijo %d ha continuado su ejecución", getpid(), getppid());
-            }
-        }
-    }
+    pid_t calc = fork();
 
-    pid_t pidCalc=fork();
+    if(calc < 0){
 
-    //Error al crear el proceso calculadora
-    if(pidCalc==-1){
-        fprintf(stderr, "\nError al crear el proceso calculadora (fork)\n");
+        printf("\nCalculadora creado incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Proceso calculadora creado correctamente
-    else if(pidCalc==0){
+    else if(calc == 0){
+
         printf("\nSoy el hijo %d , mi padre %d y voy a abrir la calculadora.\n", getpid(), getppid());
+        
         execlp("gnome-calculator", "gnome-calculator", NULL);
-        fprintf(stderr, "\nError al abrir el proceso calculadora (execlp)\n");
+
+        printf("\nCalculadora abierto incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Recogemos calculadora
-    while((pidCalc=waitpid(-1, &status, WUNTRACED | WCONTINUED))>0){
-        if(pidFact>0){
-            if(WIFEXITED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WEXITSTATUS(status));
-            }
-            else if(WIFEXITED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WTERMSIG(status));
-            }
-            else if(WIFSTOPPED(status)){
-                printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), getppid(), WSTOPSIG(status));
-            }
-            else if(WIFCONTINUED(status)){
-                printf("\nPadre %d, el hijo %d ha continuado su ejecución", getpid(), getppid());
-            }
+    while((wpid=waitpid(-1, &status, WUNTRACED | WCONTINUED)) > 0){
+
+        if(WIFEXITED(status)){
+
+            printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), wpid, WEXITSTATUS(status));
+        }
+
+        if(WIFSIGNALED(status)){
+                
+            printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), wpid, WTERMSIG(status));
+        }
+
+        if(WIFSTOPPED(status)){
+                
+            printf("\nPadre %d, ha finalizado el hijo %d con el estado %d", getpid(), wpid, WSTOPSIG(status));
         }
     }
 

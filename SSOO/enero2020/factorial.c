@@ -7,15 +7,18 @@
 int main(int argc, char *argv[]){
     
     if(argc!=2){
+
         fprintf(stderr, "\nNumero de argumentos incorrecto: ./factorial <Numero a calcular>\n");
         exit(EXIT_FAILURE);
     }
-    int num=atoi(argv[1]);
-    int fact=1;
-    for(int i=1; i<=num; i++){
-        fact=fact*i;
-    }
-    printf("\nSoy el hijo %d , mi padre %d el factorial de %d es %d\n", getpid(), getppid(), num, fact);
 
+    int fact=1;
+
+    for(size_t i = 1; i <= atoi(argv[1]); i++){
+
+        fact *= i;
+    }
+
+    printf("\nSoy el hijo %d , mi padre %d el factorial de %d es %d\n", getpid(), getppid(), atoi(argv[1]), fact);
     exit(EXIT_SUCCESS);
 }

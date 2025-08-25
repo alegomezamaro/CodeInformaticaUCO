@@ -105,7 +105,7 @@ void *signal(int sig, void (*func)(int))
     //positivo en errno.
 
 void kill(pid_t pid, int sig)
-    pid //Identificador del proceso al que enviamos la seña
+    pid //Identificador del proceso al que enviamos la señal
         pid>0 //Lo enviamos al proceso cuyo id coincide con el numero
     sig //Señal a enviar
 
