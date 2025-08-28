@@ -3,107 +3,99 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <unistd.h>
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv []){
 
-    if(argc!=3){
-        fprintf(stderr, "\nFormato incorrecto, ./ej1 <Calculadora> <Reloj>\n");
+    if(argc != 3){
+
+        fprintf(stderr, "\nNumero de argumentos incorrecto\n");
         exit(EXIT_FAILURE);
     }
 
-    //Guardamos ejecutables
-    char *calc=argv[1];
-    char *reloj=argv[2];
+    char *calc = argv[1];
+    char *reloj = argv[2];
+    pid_t pcalc, preloj;
     int status;
 
-    //Creamos el proceso calculadora
-    pid_t pidCalc=fork();
+    pcalc = fork();
 
-    //Error al crear el proceso calculadora
-    if(pidCalc==-1){
-        printf("\nError al crear el proceso calculadora (fork). Errno= %d, %s\n", errno, strerror(errno));
+    if(pcalc == -1){
+
+        fprintf(stderr, "\nProceso calculadora generado incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Abrimos calculadora
-    else if(pidCalc==0){
+    else if(pcalc == 0){
+
+        printf("\nCALCULADORA -> Soy PID %d con PPID %d\n", getpid(), getppid());
         execlp(calc, calc, NULL);
-        printf("\nError al abrir la calculadora (execlp). Errno= %d, %s\n", errno, strerror(errno));
+        fprintf(stderr, "\nCalculadora abierta incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Creamos el proceso reloj
-    pid_t pidReloj=fork();
+    while((pcalc = waitpid(-1, &status, WUNTRACED | WCONTINUED)) > 0){
 
-    //Error al crear el proceso reloj
-    if(pidReloj==-1){
-        printf("\nError al crear el proceso reloj (fork). Errno= %d, %s\n", errno, strerror(errno));
+        if(WIFEXITED(status)){
+
+            printf("\nPADRE -> Soy PID %d y he recogido la calculadora con PID %d correctamente. Status: %d\n", getpid(), pcalc, WEXITSTATUS(status));
+        }
+
+        if(WIFSIGNALED(status)){
+
+            printf("\nPADRE -> Soy PID %d y he finalizado la calculadora con PID %d correctamente. Status: %d\n", getpid(), pcalc, WTERMSIG(status));
+        }
+
+        if(WIFSTOPPED(status)){
+
+            printf("\nPADRE -> Soy PID %d y he parado la calculadora con PID %d correctamente. Status: %d\n", getpid(), pcalc, WSTOPSIG(status));
+        }
+    }
+
+    preloj = fork();
+
+    if(preloj == -1){
+
+        fprintf(stderr, "\nProceso reloj generado incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Abrimos reloj
-    else if(pidReloj==0){
+    else if(preloj == 0){
+
+        printf("\nRELOJ -> Soy PID %d con PPID %d\n", getpid(), getppid());
         execlp(reloj, reloj, NULL);
-        printf("\nError al abrir el reloj (execlp). Errno= %d, %s\n", errno, strerror(errno));
+        fprintf(stderr, "\nReloj abierta incorrectamente\n");
         exit(EXIT_FAILURE);
     }
 
-    //Recoge el proceso calculadora
-    while(pidCalc=waitpid(-1, &status, WUNTRACED | WCONTINUED)>0){
+    while((preloj = waitpid(-1, &status, WUNTRACED | WCONTINUED)) > 0){
+
         if(WIFEXITED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha salido correctamente. Status= %d", getppid(), getpid(), WEXITSTATUS(status));
+
+            printf("\nPADRE -> Soy PID %d y he recogido el reloj con PID %d correctamente. Status: %d\n", getpid(), preloj, WEXITSTATUS(status));
         }
 
-        else if(WIFSIGNALED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha salido forzosamente. Status= %d", getppid(), getpid(), WTERMSIG(status));
+        if(WIFSIGNALED(status)){
+
+            printf("\nPADRE -> Soy PID %d y he finalizado el reloj con PID %d correctamente. Status: %d\n", getpid(), preloj, WTERMSIG(status));
         }
 
-        else if(WIFSTOPPED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha parado. Status= %d", getppid(), getpid(), WSTOPSIG(status));
-        }
+        if(WIFSTOPPED(status)){
 
-        else if(WIFCONTINUED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha continuado.", getppid(), getpid());
+            printf("\nPADRE -> Soy PID %d y he parado el reloj con PID %d correctamente. Status: %d\n", getpid(), preloj, WSTOPSIG(status));
         }
-        
     }
 
-    //Recoge los procesos
-    while((pidReloj=waitpid(-1, &status, WUNTRACED | WCONTINUED))>0){
-        if(WIFEXITED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha salido correctamente. Status= %d", getppid(), getpid(), WEXITSTATUS(status));
-        }
+    if(pcalc != -1 || preloj != -1){
 
-        else if(WIFSIGNALED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha salido forzosamente. Status= %d", getppid(), getpid(), WTERMSIG(status));
-        }
-
-        else if(WIFSTOPPED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha parado. Status= %d", getppid(), getpid(), WSTOPSIG(status));
-        }
-
-        else if(WIFCONTINUED(status)){
-            printf("\nPadre %d, mi hijo con pid %d ha continuado.", getppid(), getpid());
-        }
-        
-    }
-    
-        //Se han recogido correctamente
-    if(pidReloj==-1){
-        printf("\nEl padre ha recogido ambos procesos correctamente\n");
-    }
-
-    //No se han recogido todos
-    else{
-        perror("\nEl padre no ha recogido ambos procesos correctamente\n");
+        fprintf(stderr, "\nPADRE -> No se han recogido ambos hijos correctamente\n");
         exit(EXIT_FAILURE);
     }
-    
-    //Fin del programa
+
+    fprintf(stderr, "\nPADRE -> Se han recogido ambos hijos correctamente\n");
     exit(EXIT_SUCCESS);
 }
